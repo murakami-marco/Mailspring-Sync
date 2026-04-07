@@ -27,6 +27,8 @@
 #include "ProgressCollectors.hpp"
 #include "SyncException.hpp"
 #include "NetworkRequestUtils.hpp"
+#include "Yield.hpp"
+
 
 #include <sstream>
 #include <algorithm>
@@ -365,9 +367,12 @@ void TaskProcessor::cleanupOldTasksAtRuntime() {
             unneededTasks.push_back(make_shared<Task>(unneeded));
         }
         unneeded.reset();
+        Yield yield;
         for (auto & t : unneededTasks) {
+            yield.sleepIfBusy();
             store->remove(t.get());
         }
+
         
         transaction.commit();
     }
@@ -674,8 +679,11 @@ void TaskProcessor::performLocalChangeOnMessages(Task * task, void (*modifyLocal
     ChangeMailModels models = inflateMessages(data);
     bool recomputeThreadAttributes = data.count("threadIds");
     
+    Yield yield;
     for (auto msg : models.messages) {
+        yield.sleepIfBusy();
         // TEMPORARY
+
         if (recomputeThreadAttributes) {
             msg->_skipThreadUpdatesAfterSave = true;
         }
@@ -764,8 +772,11 @@ void TaskProcessor::performRemoteChangeOnMessages(Task * task, bool updatesFolde
         MailStoreTransaction transaction{store, "performRemoteChangeOnMessages"};
         vector<shared_ptr<Message>> safeMessages = inflateMessages(data).messages;
         
+        Yield yield;
         for (auto safe : safeMessages) {
+            yield.sleepIfBusy();
             if (!messagesById.count(safe->id())) {
+
                 logger->info("-- Could not find msg {} to apply remote changes", safe->id());
                 continue;
             }

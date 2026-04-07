@@ -23,6 +23,8 @@
 #include "constants.h"
 #include "ProgressCollectors.hpp"
 #include "SyncException.hpp"
+#include "Yield.hpp"
+
 
 
 #define CACHE_CLEANUP_INTERVAL      60 * 60
@@ -800,18 +802,12 @@ void SyncWorker::syncFolderUIDRange(Folder & folder, Range range, bool heavyInit
         throw SyncException(err, "syncFolderUIDRange - fetchMessagesByUID");
     }
 
-    auto lastSleepTime = std::chrono::steady_clock::now();
-
+    Yield yield;
     logger->info("- {}: remote={}, local={}, remoteUID={}", remotePath, remote->count(), local.size(), folder.id());
 
     for (int ii = ((int)remote->count()) - 1; ii >= 0; ii--) {
-        // Never sit in a hard loop inserting things into the database for more than 250ms.
-        // This ensures we don't starve another thread waiting for a database connection
-        auto currentTime = std::chrono::steady_clock::now();
-        if (std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastSleepTime).count() > 250) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(50));
-            lastSleepTime = std::chrono::steady_clock::now();
-        }
+        yield.sleepIfBusy();
+
         
         IMAPMessage * remoteMsg = (IMAPMessage *)(remote->objectAtIndex(ii));
         uint32_t remoteUID = remoteMsg->uid();
@@ -934,7 +930,10 @@ void SyncWorker::syncFolderChangesViaCondstore(Folder & folder, IMAPFolderStatus
     logger->info("syncFolderChangesViaCondstore - Changes since HMODSEQ {}: {} changed, {} vanished",
                  modseq, modifiedOrAdded->count(), (vanished != nullptr) ? vanished->count() : 0);
 
+    Yield yield;
     for (unsigned int ii = 0; ii < modifiedOrAdded->count(); ii ++) {
+        yield.sleepIfBusy();
+
         IMAPMessage * msg = (IMAPMessage *)modifiedOrAdded->objectAtIndex(ii);
         string id = MailUtils::idForMessage(folder.accountId(), folder.path(), msg);
 
@@ -1076,8 +1075,11 @@ bool SyncWorker::syncMessageBodies(Folder & folder, IMAPFolderStatus & remoteSta
         ls[LS_BODIES_PRESENT] = 0;
     }
     
+    Yield yield;
     for (auto result : results) {
+        yield.sleepIfBusy();
         // increment local sync state - it's fine if this sometimes fails to save,
+
         // we recompute the value via COUNT(*) during cleanup
         ls[LS_BODIES_PRESENT] = ls[LS_BODIES_PRESENT].get<long long>() + 1;
 
