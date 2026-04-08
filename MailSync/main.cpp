@@ -627,7 +627,8 @@ void runListenOnMainThread(shared_ptr<Account> account) {
         } catch (std::invalid_argument & ex) {
             json resp = {{"error", ex.what()}};
             spdlog::get("logger")->error(resp.dump());
-            cout << "\n" << resp.dump() << "\n";
+            cout << resp.dump() << endl;
+
             continue;
         }
 

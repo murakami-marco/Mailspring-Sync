@@ -12,7 +12,9 @@
 #include "MailUtils.hpp"
 #include "MetadataExpirationWorker.hpp"
 #include "SyncException.hpp"
+#include "spdlog/spdlog.h"
 #include "sha256.h"
+
 #include "constants.h"
 #include "File.hpp"
 #include "Label.hpp"
@@ -476,7 +478,8 @@ shared_ptr<Label> MailUtils::labelForXGMLabelName(string mlname, vector<shared_p
         }
     }
 
-    cout << "\n\nIMPORTANT --- Label not found: " << mlname;
+    spdlog::get("logger")->warn("IMPORTANT --- Label not found: {}", mlname);
+
     return shared_ptr<Label>{};
 }
 

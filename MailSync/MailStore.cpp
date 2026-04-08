@@ -14,6 +14,8 @@
 #include "MailStoreTransaction.hpp"
 #include "SyncException.hpp"
 #include "constants.h"
+#include "spdlog/spdlog.h"
+
 
 #include "Folder.hpp"
 #include "Message.hpp"
@@ -124,8 +126,8 @@ void MailStore::migrate() {
     }
     if (version < 3) {
         // This one will be time consuming - display window
-        cout << "\nRunning " << verb;
-        cout.flush();
+        spdlog::get("logger")->info("Running {}", verb);
+
         for (string sql : V3_SETUP_QUERIES) {
             SQLite::Statement(_db, sql).exec();
         }
@@ -170,8 +172,8 @@ void MailStore::migrate() {
 
     // VACUUM if it's been a while
     if (time(0) - vacuumTime > VACUUM_INTERVAL) {
-        cout << "\nRunning Vacuum\n";
-        cout.flush();
+        spdlog::get("logger")->info("Running Vacuum");
+
         
         // Update vacuum timer first so we don't re-attempt vacuuming if it fails
         saveKeyValue(VACUUM_TIME_KEY, to_string(time(0)));
@@ -181,8 +183,8 @@ void MailStore::migrate() {
         } catch (std::exception & ex) {
             // Vacuuming can fail if we run out of disk space and isn't mandatory,
             // so we fail silently and still return 0 to allow the app to launch.
-            cout << "\n" << "Vacuuming failed with SQLite error:";
-            cout << "\n" << ex.what();
+            spdlog::get("logger")->error("Vacuuming failed with SQLite error: {}", ex.what());
+
         }
     }
 }
