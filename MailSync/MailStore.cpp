@@ -126,7 +126,8 @@ void MailStore::migrate() {
     }
     if (version < 3) {
         // This one will be time consuming - display window
-        spdlog::get("logger")->info("Running {}", verb);
+        auto logger = spdlog::get("logger");
+        if (logger) logger->info("Running {}", verb);
 
         for (string sql : V3_SETUP_QUERIES) {
             SQLite::Statement(_db, sql).exec();
@@ -172,7 +173,8 @@ void MailStore::migrate() {
 
     // VACUUM if it's been a while
     if (time(0) - vacuumTime > VACUUM_INTERVAL) {
-        spdlog::get("logger")->info("Running Vacuum");
+        auto logger = spdlog::get("logger");
+        if (logger) logger->info("Running Vacuum");
 
         
         // Update vacuum timer first so we don't re-attempt vacuuming if it fails
@@ -183,7 +185,7 @@ void MailStore::migrate() {
         } catch (std::exception & ex) {
             // Vacuuming can fail if we run out of disk space and isn't mandatory,
             // so we fail silently and still return 0 to allow the app to launch.
-            spdlog::get("logger")->error("Vacuuming failed with SQLite error: {}", ex.what());
+            if (logger) logger->error("Vacuuming failed with SQLite error: {}", ex.what());
 
         }
     }
