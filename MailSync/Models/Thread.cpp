@@ -358,21 +358,56 @@ void Thread::afterSave(MailStore * store) {
     // have not changed since the model was loaded.
     if (_initialCategoryIds != categoryIds || _initialLMRT != _lmrt || _initialLMST != _lmst) {
         string _id = id();
-        SQLite::Statement removeFolders(store->db(), "DELETE FROM ThreadCategory WHERE id = ?");
-        removeFolders.bind(1, id());
-        removeFolders.exec();
 
-        if (categoryIds.size() > 0) {
-            SQLite::Statement insertFolders(store->db(), "INSERT INTO ThreadCategory (id, value, inAllMail, unread, lastMessageReceivedTimestamp, lastMessageSentTimestamp) VALUES (?,?,?,?,?,?)");
+        // Check if the set of category IDs (the folders/labels themselves) has changed.
+        // If the set of IDs is the same, we can update all rows with a single query
+        // instead of deleting and re-inserting them.
+        bool categorySetChanged = _initialCategoryIds.size() != categoryIds.size();
+        if (!categorySetChanged) {
+            for (auto const& [key, val] : _initialCategoryIds) {
+                if (categoryIds.find(key) == categoryIds.end()) {
+                    categorySetChanged = true;
+                    break;
+                }
+            }
+        }
+
+        if (categorySetChanged) {
+            SQLite::Statement removeFolders(store->db(), "DELETE FROM ThreadCategory WHERE id = ?");
+            removeFolders.bind(1, id());
+            removeFolders.exec();
+
+            if (categoryIds.size() > 0) {
+                SQLite::Statement insertFolders(store->db(), "INSERT INTO ThreadCategory (id, value, inAllMail, unread, lastMessageReceivedTimestamp, lastMessageSentTimestamp) VALUES (?,?,?,?,?,?)");
+                for (auto& it : categoryIds) {
+                    insertFolders.bind(1, _id);
+                    insertFolders.bind(2, it.first);
+                    insertFolders.bind(3, _inAllMail);
+                    insertFolders.bind(4, it.second);
+                    insertFolders.bind(5, _lmrt);
+                    insertFolders.bind(6, _lmst);
+                    insertFolders.exec();
+                    insertFolders.reset();
+                }
+            }
+        } else if (categoryIds.size() > 0) {
+            // The folders/labels are the same, but unread status or timestamps changed.
+            // We can update all rows for this thread at once.
+            SQLite::Statement updateFolders(store->db(), "UPDATE ThreadCategory SET inAllMail = ?, lastMessageReceivedTimestamp = ?, lastMessageSentTimestamp = ? WHERE id = ?");
+            updateFolders.bind(1, _inAllMail);
+            updateFolders.bind(2, _lmrt);
+            updateFolders.bind(3, _lmst);
+            updateFolders.bind(4, _id);
+            updateFolders.exec();
+
+            // And now update the unread status for each category.
+            SQLite::Statement updateUnread(store->db(), "UPDATE ThreadCategory SET unread = ? WHERE id = ? AND value = ?");
             for (auto& it : categoryIds) {
-                insertFolders.bind(1, _id);
-                insertFolders.bind(2, it.first);
-                insertFolders.bind(3, _inAllMail);
-                insertFolders.bind(4, it.second);
-                insertFolders.bind(5, _lmrt);
-                insertFolders.bind(6, _lmst);
-                insertFolders.exec();
-                insertFolders.reset();
+                updateUnread.bind(1, it.second);
+                updateUnread.bind(2, _id);
+                updateUnread.bind(3, it.first);
+                updateUnread.exec();
+                updateUnread.reset();
             }
         }
     }

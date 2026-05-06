@@ -645,7 +645,8 @@ void runListenOnMainThread(shared_ptr<Account> account) {
                 // just exit.
                 std::exit(141);
             }
-			std::this_thread::sleep_for(std::chrono::microseconds(1000));
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            continue;
         }
 
         try {
