@@ -170,7 +170,7 @@ public:
         vector<shared_ptr<ModelClass>> all;
 
         auto chunks = MailUtils::chunksOfVector(set, 900);
-        for (auto chunk : chunks) {
+        for (const auto& chunk : chunks) {
             auto results = this->findAll<ModelClass>(Query().equal(colname, chunk));
             all.insert(all.end(), results.begin(), results.end());
         }

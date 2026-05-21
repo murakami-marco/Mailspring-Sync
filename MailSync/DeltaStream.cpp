@@ -138,9 +138,9 @@ void DeltaStream::flushBuffer() {
     for (const auto & it : buffer) {
         for (const auto & item : it.second) {
             cout << item.dump() + "\n";
-            cout << flush;
         }
     }
+    cout << flush;
     buffer = {};
     scheduled = false;
 }

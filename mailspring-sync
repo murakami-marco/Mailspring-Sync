@@ -2,4 +2,6 @@
 set -e
 set -o pipefail
 SCRIPTPATH="$( cd "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
-SASL_PATH="$SCRIPTPATH" LD_LIBRARY_PATH="$SCRIPTPATH:$LD_LIBRARY_PATH" "$SCRIPTPATH/mailsync.bin" "$@"
+export SASL_PATH="$SCRIPTPATH"
+export LD_LIBRARY_PATH="$SCRIPTPATH:$LD_LIBRARY_PATH"
+exec "$SCRIPTPATH/mailsync.bin" "$@"

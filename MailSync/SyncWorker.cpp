@@ -82,8 +82,7 @@ void SyncWorker::idleInterrupt()
 }
 
 void SyncWorker::idleQueueBodiesToSync(vector<string> & ids) {
-    // called on main thread
-    std::unique_lock<std::mutex> lck(idleMtx);
+    lock_guard<mutex> lck(idleMtx);
     for (string & id : ids) {
         idleFetchBodyIDs.push_back(id);
     }

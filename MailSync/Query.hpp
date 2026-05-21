@@ -30,18 +30,18 @@ class Query {
 public:
     Query() noexcept;
 
-    Query & equal(string col, string val);
-    Query & equal(string col, double val);
-    Query & equal(string col, vector<string> & val);
-    Query & equal(string col, vector<uint32_t> & val);
+    Query & equal(const string& col, const string& val);
+    Query & equal(const string& col, double val);
+    Query & equal(const string& col, const vector<string> & val);
+    Query & equal(const string& col, const vector<uint32_t> & val);
 
-    Query & gt(string col, double val);
-    Query & gte(string col, double val);
-    Query & lt(string col, double val);
-    Query & lte(string col, double val);
+    Query & gt(const string& col, double val);
+    Query & gte(const string& col, double val);
+    Query & lt(const string& col, double val);
+    Query & lte(const string& col, double val);
 
     Query & limit(int l);
-    Query & orderBy(string col, string dir = "ASC");
+    Query & orderBy(const string& col, const string& dir = "ASC");
 
     int getLimit();
     std::string getSQL();

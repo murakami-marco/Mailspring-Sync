@@ -22,17 +22,17 @@ using namespace std;
 Query::Query() noexcept : _clauses({}), _limit(0), _orderBy(""), _orderDir("ASC") {
 }
 
-Query & Query::equal(string col, string val) {
+Query & Query::equal(const string& col, const string& val) {
     _clauses[col] = {{"op","="}, {"rhs", val}};
     return *this;
 }
 
-Query & Query::equal(string col, double val) {
+Query & Query::equal(const string& col, double val) {
     _clauses[col] = {{"op","="}, {"rhs", val}};
     return *this;
 }
 
-Query & Query::equal(string col, vector<string> & val) {
+Query & Query::equal(const string& col, const vector<string> & val) {
     if (val.size() > 999) {
         spdlog::get("logger")->warn("Attempting to construct WHERE {} IN () query with >999 values ({}), this will fail and should be reported.", col, val.size());
     }
@@ -40,27 +40,27 @@ Query & Query::equal(string col, vector<string> & val) {
     return *this;
 }
 
-Query & Query::equal(string col, vector<uint32_t> & val) {
+Query & Query::equal(const string& col, const vector<uint32_t> & val) {
     _clauses[col] = {{"op","="}, {"rhs", val}};
     return *this;
 }
 
-Query & Query::gt(string col, double val) {
+Query & Query::gt(const string& col, double val) {
     _clauses[col] = {{"op",">"}, {"rhs", val}};
     return *this;
 }
 
-Query & Query::gte(string col, double val) {
+Query & Query::gte(const string& col, double val) {
     _clauses[col] = {{"op",">="}, {"rhs", val}};
     return *this;
 }
 
-Query & Query::lt(string col, double val) {
+Query & Query::lt(const string& col, double val) {
     _clauses[col] = {{"op","<"}, {"rhs", val}};
     return *this;
 }
 
-Query & Query::lte(string col, double val) {
+Query & Query::lte(const string& col, double val) {
     _clauses[col] = {{"op","<="}, {"rhs", val}};
     return *this;
 }
@@ -70,7 +70,7 @@ Query & Query::limit(int l) {
     return *this;
 }
 
-Query & Query::orderBy(string col, string dir) {
+Query & Query::orderBy(const string& col, const string& dir) {
     _orderBy = col;
     _orderDir = dir;
     return *this;

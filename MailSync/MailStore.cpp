@@ -85,7 +85,9 @@ MailStore::MailStore() :
     _stmtCommitTransaction(_db, "COMMIT"),
     _owningThread(spdlog::details::os::thread_id()),
     _labelCacheVersion(0),
-    _labelCache()
+    _labelCache(),
+    _transactionOpen(false),
+    _streamMaxDelay(0)
 {
     _db.setBusyTimeout(10 * 1000);
     
@@ -252,8 +254,12 @@ map<uint32_t, MessageAttributes> MailStore::fetchMessagesAttributesInRange(Range
         attrs.unread = query.getColumn("unread").getInt() != 0;
         
         vector<string> labels{};
-        for (const auto i : json::parse(query.getColumn("remoteXGMLabels").getString())) {
-            labels.push_back(i.get<string>());
+        try {
+            for (const auto i : json::parse(query.getColumn("remoteXGMLabels").getString())) {
+                labels.push_back(i.get<string>());
+            }
+        } catch (const json::parse_error& e) {
+            spdlog::get("logger")->error("Failed to parse labels: {}", e.what());
         }
         attrs.labels = labels;
 
