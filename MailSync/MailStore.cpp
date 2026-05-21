@@ -89,7 +89,7 @@ MailStore::MailStore() :
     _transactionOpen(false),
     _streamMaxDelay(0)
 {
-    _db.setBusyTimeout(10 * 1000);
+    _db.setBusyTimeout(60 * 1000);
     
     // Note: These are properties of the connection, so they must be set regardless
     // of whether the database setup queries are run.
@@ -104,7 +104,7 @@ MailStore::MailStore() :
 
 static int CURRENT_VERSION = 9;
 static string VACUUM_TIME_KEY = "VACUUM_TIME";
-static time_t VACUUM_INTERVAL = 14 * 24 * 60 * 60; // 14 days
+static time_t VACUUM_INTERVAL = 30 * 24 * 60 * 60; // 30 days
 
 void MailStore::migrate() {
     SQLite::Statement uv(_db, "PRAGMA user_version");
